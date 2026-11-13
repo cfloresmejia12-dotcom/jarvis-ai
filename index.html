@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JARVIS AI</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#030914;color:#bcefff;
+ font-family:Arial;text-align:center;padding:25px 15px;
+}
+h1{color:#35dfff;letter-spacing:9px;text-shadow:0 0 15px #00bfff}
+.sub{font-size:11px;letter-spacing:3px;color:#6baabd}
+.core{
+ width:200px;height:200px;border:3px solid #00cfff;
+ border-radius:50%;margin:45px auto;
+ display:grid;place-items:center;
+ box-shadow:0 0 30px #00bfff,inset 0 0 30px #007da8;
+ animation:pulse 3s infinite;
+}
+.core span{font-size:65px;color:#52eaff}
+@keyframes pulse{50%{box-shadow:0 0 50px #00bfff,inset 0 0 40px #007da8}}
+#status{color:#36dfff;letter-spacing:3px;font-size:13px}
+#answer{margin:25px auto;padding:20px;border:1px solid #176080;border-radius:15px;max-width:420px;min-height:75px}
+button{
+ display:block;width:95%;max-width:350px;margin:13px auto;
+ padding:17px;border:1px solid #00cfff;border-radius:12px;
+ background:#071b30;color:#60eaff;font-size:16px;
+}
+input{
+ width:95%;max-width:350px;padding:15px;
+ background:#071b30;border:1px solid #1683a8;
+ border-radius:10px;color:white;font-size:16px;
+}
+</style>
+</head>
+<body>
+<h1>J.A.R.V.I.S.</h1>
+<div class="sub">PERSONAL AI ASSISTANT</div>
+<div class="core"><span>✦</span></div>
+<div id="status">SISTEMA EN ESPERA</div>
+<div id="answer">Buenos días. Soy JARVIS. Estoy listo para ayudarte.</div>
+
+<button onclick="listen()">🎙 ACTIVAR MICRÓFONO</button>
+<button onclick="wake()">◉ MODO HOLA JARVIS</button>
+<button onclick="stopJarvis()">■ DETENER</button>
+
+<input id="question" placeholder="Escribe una orden...">
+<button onclick="textCommand()">ENVIAR ORDEN</button>
+
+<script>
+const statusBox=document.getElementById("status");
+const answer=document.getElementById("answer");
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,active=false;
+
+function say(t){
+ answer.textContent=t;
+ statusBox.textContent="JARVIS HABLANDO";
+ speechSynthesis.cancel();
+ let u=new SpeechSynthesisUtterance(t);
+ u.lang="es-MX";
+ u.rate=0.95;
+ u.onend=()=>statusBox.textContent=active?"ESCUCHANDO":"SISTEMA EN ESPERA";
+ speechSynthesis.speak(u);
+}
+
+function command(t){
+ t=t.toLowerCase();
+ if(t.includes("hola jarvis"))say("A sus órdenes. ¿Qué necesitas?");
+ else if(t.includes("hora"))say("Son las "+new Date().toLocaleTimeString("es-MX"));
+ else if(t.includes("fecha"))say("Hoy es "+new Date().toLocaleDateString("es-MX"));
+ else if(t.includes("cómo estás")||t.includes("como estas"))say("Todos mis sistemas están listos.");
+ else if(t.includes("quién eres")||t.includes("quien eres"))say("Soy JARVIS, tu asistente personal.");
+ else if(t.includes("gracias"))say("Siempre a tu servicio.");
+ else say("He recibido tu orden: "+t+". Esta función todavía está en desarrollo.");
+}
+
+function startRecognition(continuous){
+ if(!SR){say("El reconocimiento de voz no está disponible en este navegador.");return;}
+ if(rec){try{rec.stop()}catch(e){}}
+ rec=new SR();
+ rec.lang="es-MX";
+ rec.continuous=continuous;
+ rec.interimResults=false;
+ rec.onresult=e=>{
+  let t=e.results[e.results.length-1][0].transcript;
+  command(t);
+ };
+ rec.onerror=e=>{
+  statusBox.textContent="ERROR: "+e.error;
+  active=false;
+ };
+ rec.onend=()=>{
+  if(active&&continuous){
+   setTimeout(()=>{if(active)try{rec.start()}catch(e){}},900);
+  }else if(!active)statusBox.textContent="SISTEMA EN ESPERA";
+ };
+ try{rec.start();statusBox.textContent="TE ESTOY ESCUCHANDO";}
+ catch(e){say("No pude iniciar el micrófono. Intenta nuevamente.");}
+}
+function listen(){active=false;startRecognition(false);}
+function wake(){active=true;startRecognition(true);}
+function stopJarvis(){
+ active=false;
+ if(rec)try{rec.stop()}catch(e){}
+ speechSynthesis.cancel();
+ statusBox.textContent="SISTEMA EN ESPERA";
+}
+function textCommand(){
+ let v=document.getElementById("question").value.trim();
+ if(v){command(v);document.getElementById("question").value="";}
+}
+</script>
+</body>
+</html>
